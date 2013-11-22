@@ -1,0 +1,17 @@
+{
+    "name": "blurgroup/chameleon",
+    "description": "A PHP conversion library",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Jonjo McKay",
+            "email": "jonjo@blurgroup.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {"Chameleon": "src/"}
+    },
+    "require": {
+        "php": ">=5.3"
+    }
+}
