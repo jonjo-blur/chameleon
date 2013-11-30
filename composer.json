@@ -12,6 +12,7 @@
         "psr-0": {"Chameleon": "src/"}
     },
     "require": {
-        "php": ">=5.3"
+        "php": ">=5.3",
+        "alchemy/binary-driver": "1.*"
     }
 }
