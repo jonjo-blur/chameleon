@@ -1,31 +1,67 @@
 <?php
 namespace Chameleon\Format;
 
-use Alchemy\BinaryDriver\AbstractBinary;
+use Alchemy\BinaryDriver\Exception\ExecutionFailureException;
+use Chameleon\Driver\UnoconvDriver;
 
-class Docx
+/**
+ * Class Docx
+ * @package Chameleon\Format
+ */
+class Docx extends Base
 {
 
-	private $inputFile;
+    /**
+     * @param string $inputFile
+     * @param string $outputFile
+     */
+    public function __construct($inputFile, $outputFile)
+    {
+        $this->inputFile = $inputFile;
+        $this->outputFile = $outputFile;
+        $this->savedFiles = array();
+    }
 
-	public function __construct($inputFile)
-	{
-		$this->inputFile = $inputFile;
-	}
+    /**
+     * @return array
+     */
+    public function toGif()
+    {
+        return $this->documentToImage($this->inputFile, $this->getOutputFilename(), 'gif');
+    }
 
-	public function getInputFile()
-	{
-		return $this->inputFile;
-	}
+    /**
+     * @return array
+     */
+    public function toJpg()
+    {
+        return $this->documentToImage($this->inputFile, $this->getOutputFilename(), 'jpg');
+    }
 
-	public function toPdf($outputFile)
-	{
-		// return exec('unoconv -f pdf -o ' . $outputFile . ' ' . $this->getInputFile());
+    /**
+     * @return string
+     */
+    public function toPdf()
+    {
+        $driver = UnoconvDriver::load('/usr/bin/unoconv');
 
-		$driver = \Chameleon\Driver\UnoconvDriver::load('/usr/bin/unoconv');
+        try {
+            $driver->command(array('-f', 'pdf', '-o', $this->outputFile, $this->inputFile));
 
-		return $driver->command(array('-f', 'pdf', '-o', $outputFile, $this->getInputFile()));
- 
-		// return $this->getInputFile();
-	}
+            $this->savedFiles[] = $this->outputFile;
+        } catch (ExecutionFailureException $e) {
+            // TODO: Implement this
+            var_dump($e->getMessage());
+        }
+
+        return $this->savedFiles;
+    }
+
+    /**
+     * @return array
+     */
+    public function toPng()
+    {
+        return $this->documentToImage($this->inputFile, $this->getOutputFilename(), 'png');
+    }
 }

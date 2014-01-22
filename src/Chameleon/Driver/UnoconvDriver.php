@@ -3,10 +3,19 @@ namespace Chameleon\Driver;
 
 use Alchemy\BinaryDriver\AbstractBinary;
 
+/**
+ * Class UnoconvDriver
+ * @package Chameleon\Driver
+ */
 class UnoconvDriver extends AbstractBinary
 {
 
-	public function getName()
+    /**
+     * Returns the name of the driver
+     *
+     * @return string
+     */
+    public function getName()
 	{
 		return 'unoconv driver';
 	}

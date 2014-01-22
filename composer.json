@@ -13,6 +13,7 @@
     },
     "require": {
         "php": ">=5.3",
-        "alchemy/binary-driver": "1.*"
+        "alchemy/binary-driver": "1.*",
+        "dflydev/apache-mime-types": "v1.0.1"
     }
 }

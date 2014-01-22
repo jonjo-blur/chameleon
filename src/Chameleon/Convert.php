@@ -1,73 +1,173 @@
 <?php
 namespace Chameleon;
 
+use Dflydev\ApacheMimeTypes\PhpRepository;
+use Dflydev\ApacheMimeTypes\RepositoryInterface;
+
+/**
+ * Class Convert
+ * @package Chameleon
+ */
 class Convert
 {
 
-	private $inputFile;
-	private $outputFile;
-	private $formatFrom;
-	private $formatTo;
+    /**
+     * @var string
+     */
+    private $inputFile;
+    /**
+     * @var string
+     */
+    private $outputFile;
+    /**
+     * @var string
+     */
+    private $formatTo;
+    /**
+     * @var RepositoryInterface
+     */
+    private $mimeRepository;
 
-	public function __construct($inputFile = null, $outputFile = null, $formatFrom = null, $formatTo = null)
-	{
-		$this->inputFile = $inputFile;
-		$this->outputFile = $outputFile;
-		$this->formatFrom = $formatFrom;
-		$this->formatTo = $formatTo;
-	}
+    /**
+     * @param string $inputFile
+     * @param string $outputFile
+     * @param string $formatTo
+     */
+    public function __construct($inputFile = null, $outputFile = null, $formatTo = null)
+    {
+        $this->inputFile = $inputFile;
+        $this->outputFile = $outputFile;
+        $this->formatTo = $formatTo;
 
-	public function getInputFile()
-	{
-		return $this->inputFile;
-	}
+        $this->mimeRepository = new PhpRepository();
+    }
 
-	public function setInputFile($inputFile)
-	{
-		$this->inputFile = $inputFile;
-	}
+    /**
+     * @return string
+     */
+    public function getInputFile()
+    {
+        return $this->inputFile;
+    }
 
-	public function getOutputFile()
-	{
-		return $this->outputFile;
-	}
+    /**
+     * @param string $inputFile
+     */
+    public function setInputFile($inputFile)
+    {
+        $this->inputFile = $inputFile;
+    }
 
-	public function setOutputFile($outputFile)
-	{
-		$this->outputFile = $outputFile;
-	}
+    /**
+     * @return string
+     */
+    public function getOutputFile()
+    {
+        return $this->outputFile;
+    }
 
-	public function getFormatFrom()
-	{
-		return $this->formatFrom;
-	}
+    /**
+     * @param string $outputFile
+     */
+    public function setOutputFile($outputFile)
+    {
+        $this->outputFile = $outputFile;
+    }
 
-	public function setFormatFrom($formatFrom)
-	{
-		$this->formatFrom = $formatFrom;
-	}
+    /**
+     * @return string
+     */
+    public function getFormatTo()
+    {
+        return $this->formatTo;
+    }
 
-	public function getFormatTo()
-	{
-		return $this->formatTo;
-	}
+    /**
+     * @param string $formatTo
+     */
+    public function setFormatTo($formatTo)
+    {
+        $this->formatTo = $formatTo;
+    }
 
-	public function setFormatTo($formatTo)
-	{
-		$this->formatTo = $formatTo;
-	}
+    /**
+     * @return mixed
+     * @throws Exception\UnsupportedConversionException
+     */
+    public function convert()
+    {
+        if (!$this->getFormatTo()) {
+            $this->setFormatTo(pathinfo($this->getOutputFile(), PATHINFO_EXTENSION));
+        }
 
-	public function convert()
-	{
-		$formatFromClassName = 'Chameleon\Format\\' . ucfirst($this->getFormatFrom());
-		$formatToFunctionName = 'to' . ucfirst($this->getFormatTo());
+        $formatFrom = $this->detectFormatFrom();
+        $formatFromClassName = 'Chameleon\Format\\' . $formatFrom;
+        $formatToFunctionName = 'to' . ucfirst($this->getFormatTo());
 
-		$conversionClass = new $formatFromClassName($this->getInputFile());
+        $conversionClass = new $formatFromClassName($this->getInputFile(), $this->getOutputFile());
 
-		if (method_exists($conversionClass, $formatToFunctionName) && is_callable(array($conversionClass, $formatToFunctionName))) {
-			return $conversionClass->$formatToFunctionName($this->getOutputFile());
-		} else {
-			throw new Exception\UnsupportedConversionException($this->getFormatFrom(), $this->getFormatTo());
-		}		
-	}
+        if (method_exists($conversionClass, $formatToFunctionName) && is_callable(
+                array($conversionClass, $formatToFunctionName)
+            )
+        ) {
+            return $conversionClass->$formatToFunctionName();
+        } else {
+            throw new Exception\UnsupportedConversionException($formatFrom, $this->getFormatTo());
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function detectFormatFrom()
+    {
+        $mimeType = $this->detectMimeType($this->getInputFile());
+
+        $extension = $this->findExtensionFromMimeType($mimeType);
+
+        return ucfirst($extension);
+    }
+
+    /**
+     * @param string $mimeType
+     * @throws \ErrorException
+     * @return string
+     */
+    public function findExtensionFromMimeType($mimeType)
+    {
+        $extension = current($this->mimeRepository->findExtensions($mimeType));
+
+        if (!$extension) {
+            throw new \ErrorException('Mime could not be mapped to an extension. Consider submitting a GitHub issue!');
+        }
+
+        return $extension;
+    }
+
+    /**
+     * @param string $filename
+     * @return string
+     * @throws \ErrorException
+     */
+    public function detectMimeType($filename)
+    {
+        // Is file readable ?
+        if (false === stream_resolve_include_path($filename)) {
+            throw new \ErrorException('Could not detect mime type of file (file not readable): ' . $filename);
+        }
+
+        if (!isset($finfo)) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        }
+
+        if (!empty($finfo)) {
+            $type = finfo_file($finfo, $filename);
+        }
+
+        if (!isset($type)) {
+            throw new \ErrorException('Could not detect mime type of file: ' . $filename);
+        } else {
+            return $type;
+        }
+    }
 }
